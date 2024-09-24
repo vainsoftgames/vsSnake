@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>vsSnake</title>
+    <style>
+        body {
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        #gameCanvas {
+            border: 1px solid #fff;
+            background-color: #111;
+        }
+        #score {
+            position: absolute;
+            top: 20px;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="score">Score: 0</div>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+
+        const grid = 20; // Size of each grid square
+        let count = 0;
+        let score = 0;
+
+        // Snake object
+        const snake = {
+            x: 160,
+            y: 160,
+            dx: grid,
+            dy: 0,
+            cells: [],
+            maxCells: 4
+        };
+
+        // Food object
+        const food = {
+            x: 320,
+            y: 320
+        };
+
+        // Get a random grid position
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min)) * grid;
+        }
+
+        // Game loop
+        function loop() {
+            requestAnimationFrame(loop);
+
+            // Slow game loop to 15 fps
+            if (++count < 6) {
+                return;
+            }
+            count = 0;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Move snake by its velocity
+            snake.x += snake.dx;
+            snake.y += snake.dy;
+
+            // Wrap snake position horizontally and vertically
+            if (snake.x < 0) {
+                snake.x = canvas.width - grid;
+            } else if (snake.x >= canvas.width) {
+                snake.x = 0;
+            }
+
+            if (snake.y < 0) {
+                snake.y = canvas.height - grid;
+            } else if (snake.y >= canvas.height) {
+                snake.y = 0;
+            }
+
+            // Keep track of where snake has been
+            snake.cells.unshift({x: snake.x, y: snake.y});
+
+            // Remove cells as we move away from them
+            if (snake.cells.length > snake.maxCells) {
+                snake.cells.pop();
+            }
+
+            // Draw food
+            ctx.fillStyle = 'red';
+            ctx.fillRect(food.x, food.y, grid-1, grid-1);
+
+            // Draw snake
+            ctx.fillStyle = 'lime';
+            snake.cells.forEach(function(cell, index) {
+                ctx.fillRect(cell.x, cell.y, grid-1, grid-1);  
+
+                // Snake ate food
+                if (cell.x === food.x && cell.y === food.y) {
+                    snake.maxCells++;
+                    score++;
+                    scoreElement.textContent = 'Score: ' + score;
+                    // Re-position food
+                    food.x = getRandomInt(0, canvas.width / grid) ;
+                    food.y = getRandomInt(0, canvas.height / grid);
+                }
+
+                // Check collision with all other cells
+                for (let i = index + 1; i < snake.cells.length; i++) {
+                    if (cell.x === snake.cells[i].x && cell.y === snake.cells[i].y) {
+                        // Reset game
+                        snake.x = 160;
+                        snake.y = 160;
+                        snake.cells = [];
+                        snake.maxCells = 4;
+                        snake.dx = grid;
+                        snake.dy = 0;
+                        score = 0;
+                        scoreElement.textContent = 'Score: ' + score;
+                        food.x = getRandomInt(0, canvas.width / grid);
+                        food.y = getRandomInt(0, canvas.height / grid);
+                    }
+                }
+            });
+        }
+
+        // Listen to keyboard events to move the snake
+        document.addEventListener('keydown', function(e) {
+            // Prevent snake from reversing
+            if (e.which === 37 && snake.dx === 0) {
+                snake.dx = -grid;
+                snake.dy = 0;
+            }
+            else if (e.which === 38 && snake.dy === 0) {
+                snake.dy = -grid;
+                snake.dx = 0;
+            }
+            else if (e.which === 39 && snake.dx === 0) {
+                snake.dx = grid;
+                snake.dy = 0;
+            }
+            else if (e.which === 40 && snake.dy === 0) {
+                snake.dy = grid;
+                snake.dx = 0;
+            }
+        });
+
+        // Start the game
+        requestAnimationFrame(loop);
+    </script>
+</body>
+</html>
